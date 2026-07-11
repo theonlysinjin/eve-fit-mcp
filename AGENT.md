@@ -15,25 +15,28 @@ Consumer-facing agent playbooks (how to *use* the MCP while fitting) live in the
 | `src/eve_fit_mcp/report.py` | FitReport serialization + validation errors |
 | `src/eve_fit_mcp/eos_bootstrap.py` | Load Eos + Phobos/cache fingerprint |
 | `src/eve_fit_mcp/phobos_data.py` | Type/group lookups from dump |
-| `tests/` | Smoke (no data) + roundtrips (need Phobos) |
+| `eos/` | Git submodule — [pyfa-org/eos](https://github.com/pyfa-org/eos) |
+| `phobos/` | Git submodule — [pyfa-org/Phobos](https://github.com/pyfa-org/Phobos) dump tool |
+| `tests/` | Smoke (no data) + roundtrips (need a dump) |
 
 ## Environment
 
-Required at runtime: `EOS_PHOBOS_PATH`, `EOS_CACHE_PATH`. Optional: `EOS_PACKAGE_PATH`, `EOS_SOURCE_ALIAS`, `EOS_MAX_FITS`, `EOS_FIT_TTL`. See `.env.example` and README.
+Required at runtime: `EOS_PHOBOS_PATH` (dump root, not the submodule), `EOS_CACHE_PATH`. Optional: `EOS_PACKAGE_PATH` (point at `eos/`), `EOS_SOURCE_ALIAS`, `EOS_MAX_FITS`, `EOS_FIT_TTL`. See `.env.example` and README.
 
-Eos is a sibling checkout (or `EOS_PACKAGE_PATH`); it is not a PyPI dependency.
+After clone: `git submodule update --init --recursive`. Eos is not a PyPI dependency.
 
 ## Dev commands
 
 ```bash
+git submodule update --init --recursive
 uv venv .venv && source .venv/bin/activate
 uv pip install -e ".[dev]"
-export EOS_PHOBOS_PATH=… EOS_CACHE_PATH=… EOS_PACKAGE_PATH=…
+export EOS_PHOBOS_PATH=… EOS_CACHE_PATH=… EOS_PACKAGE_PATH=$PWD/eos
 pytest
 eve-fit-mcp   # or: python -m eve_fit_mcp
 ```
 
-Integration tests skip when Phobos data is missing.
+Integration tests skip when dump data is missing.
 
 ## Contracts to preserve
 

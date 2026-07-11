@@ -5,10 +5,10 @@ MCP server that wraps the [Eos](https://github.com/pyfa-org/eos) EVE Online fitt
 ## Requirements
 
 - Python 3.10+
-- Sibling [eos](https://github.com/pyfa-org/eos) checkout (or `EOS_PACKAGE_PATH`)
-- A Phobos data dump (or Pyfa `staticdata/` layout with `fsd_built/`, `fsd_lite/`, `phobos/`)
+- Git submodules: [eos](https://github.com/pyfa-org/eos) (fitting engine) and [Phobos](https://github.com/pyfa-org/Phobos) (client dump tool)
+- A Phobos **data dump** at runtime (or Pyfa `staticdata/` with `fsd_built/`, `fsd_lite/`, `phobos/`)
 
-Phobos itself lives at `../Phobos` and is used to generate dumps from the EVE client; you do not need to run it at MCP runtime if you already have a dump.
+`EOS_PHOBOS_PATH` points at the dump output, not the `phobos/` submodule. Use the submodule to regenerate dumps from the EVE client when needed; if you already have a dump (e.g. Pyfa’s), you do not need to run Phobos at MCP runtime.
 
 ## Environment
 
@@ -17,28 +17,32 @@ Phobos itself lives at `../Phobos` and is used to generate dumps from the EVE cl
 | `EOS_PHOBOS_PATH` | yes | Phobos dump root (folder containing `fsd_built/`, `fsd_lite/`, `phobos/`) |
 | `EOS_CACHE_PATH` | yes | Eos cache file path, e.g. `.cache/eos_tq.json.bz2` |
 | `EOS_SOURCE_ALIAS` | no | Default `tq` |
-| `EOS_PACKAGE_PATH` | no | Path to eos repo root if not importable |
+| `EOS_PACKAGE_PATH` | no | Path to eos package root (defaults to the `eos/` submodule if you set it) |
 | `EOS_MAX_FITS` | no | Max in-memory fits (default 100) |
 | `EOS_FIT_TTL` | no | Optional fit TTL in seconds |
 
-Example using Pyfa’s staticdata (multi-part `*.0.json` files are supported):
+Example using Pyfa’s staticdata (multi-part `*.0.json` files are supported) and the vendored `eos/` submodule:
 
 ```bash
 export EOS_PHOBOS_PATH=/home/sinjin/workspace/Pyfa/staticdata
 export EOS_CACHE_PATH=/home/sinjin/workspace/eve-fit-mcp/.cache/eos_tq.json.bz2
-export EOS_PACKAGE_PATH=/home/sinjin/workspace/eos
+export EOS_PACKAGE_PATH=/home/sinjin/workspace/eve-fit-mcp/eos
 ```
 
-First start builds the Eos cache from Phobos (can take a few minutes). Later starts reuse the cache when the fingerprint matches.
+First start builds the Eos cache from the dump (can take a few minutes). Later starts reuse the cache when the fingerprint matches.
 
 ## Install & run
 
 ```bash
+git clone --recurse-submodules git@github.com:theonlysinjin/eve-fit-mcp.git
 cd eve-fit-mcp
+# if you already cloned without submodules:
+# git submodule update --init --recursive
+
 uv venv .venv && source .venv/bin/activate
 uv pip install -e ".[dev]"
-# eos is loaded via EOS_PACKAGE_PATH / PYTHONPATH (its setup.py needs pip)
-export PYTHONPATH=/home/sinjin/workspace/eos:$PYTHONPATH
+export PYTHONPATH="$PWD/eos:$PYTHONPATH"
+export EOS_PACKAGE_PATH="$PWD/eos"
 
 eve-fit-mcp
 # or: python -m eve_fit_mcp
@@ -55,8 +59,8 @@ eve-fit-mcp
       "env": {
         "EOS_PHOBOS_PATH": "/home/sinjin/workspace/Pyfa/staticdata",
         "EOS_CACHE_PATH": "/home/sinjin/workspace/eve-fit-mcp/.cache/eos_tq.json.bz2",
-        "EOS_PACKAGE_PATH": "/home/sinjin/workspace/eos",
-        "PYTHONPATH": "/home/sinjin/workspace/eos"
+        "EOS_PACKAGE_PATH": "/home/sinjin/workspace/eve-fit-mcp/eos",
+        "PYTHONPATH": "/home/sinjin/workspace/eve-fit-mcp/eos"
       }
     }
   }

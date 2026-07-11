@@ -7,8 +7,10 @@ from pathlib import Path
 
 import pytest
 
+_REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PHOBOS = Path("/home/sinjin/workspace/Pyfa/staticdata")
-DEFAULT_CACHE = Path("/home/sinjin/workspace/eve-fit-mcp/.cache/eos_tq.json.bz2")
+DEFAULT_CACHE = _REPO_ROOT / ".cache" / "eos_tq.json.bz2"
+DEFAULT_EOS = _REPO_ROOT / "eos"
 
 
 def _phobos_available() -> bool:
@@ -22,7 +24,7 @@ def eos_ready():
         pytest.skip("EOS_PHOBOS_PATH / Phobos dump not available")
     os.environ.setdefault("EOS_PHOBOS_PATH", str(DEFAULT_PHOBOS))
     os.environ.setdefault("EOS_CACHE_PATH", str(DEFAULT_CACHE))
-    os.environ.setdefault("EOS_PACKAGE_PATH", str(Path("/home/sinjin/workspace/eos")))
+    os.environ.setdefault("EOS_PACKAGE_PATH", str(DEFAULT_EOS))
     from eve_fit_mcp.eos_bootstrap import bootstrap_eos
 
     bootstrap_eos()

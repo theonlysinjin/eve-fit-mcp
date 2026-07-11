@@ -1,0 +1,6 @@
+[submodule "eos"]
+	path = eos
+	url = https://github.com/pyfa-org/eos.git
+[submodule "phobos"]
+	path = phobos
+	url = https://github.com/pyfa-org/Phobos.git

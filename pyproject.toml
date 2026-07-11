@@ -24,7 +24,7 @@ packages = ["src/eve_fit_mcp"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src", "../eos"]
+pythonpath = ["src", "eos"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
