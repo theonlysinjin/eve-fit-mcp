@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from eve_fit_mcp.errors import FitMcpError, InvalidRackError, InvalidTypeError
-from eve_fit_mcp import mutations
+from pyfa_mcp.errors import FitMcpError, InvalidRackError, InvalidTypeError
+from pyfa_mcp import mutations
 
 
 # Navy Typhoon; T2 Damage Control (skill-gated); Gyro II

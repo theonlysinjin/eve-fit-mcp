@@ -6,9 +6,9 @@ from typing import Literal
 
 from eos import Charge, ModuleHigh, ModuleLow, ModuleMid, SlotTakenError, TypeFetchError
 
-from eve_fit_mcp.errors import InvalidRackError, InvalidTypeError, SlotError
-from eve_fit_mcp.state_map import parse_state
-from eve_fit_mcp.typecheck import require_type
+from pyfa_mcp.errors import InvalidRackError, InvalidTypeError, SlotError
+from pyfa_mcp.state_map import parse_state
+from pyfa_mcp.typecheck import require_type
 
 RackName = Literal["high", "mid", "low"]
 

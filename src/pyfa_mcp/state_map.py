@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from eos import State
 
-from eve_fit_mcp.errors import MutationError
+from pyfa_mcp.errors import MutationError
 
 _STATE_BY_NAME = {
     "offline": State.offline,

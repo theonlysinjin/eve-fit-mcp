@@ -13,7 +13,7 @@ from eos.item_filter import (
     turret_filter,
 )
 
-from eve_fit_mcp.state_map import state_name
+from pyfa_mcp.state_map import state_name
 
 DPS_FILTERS = {
     "turret": turret_filter,

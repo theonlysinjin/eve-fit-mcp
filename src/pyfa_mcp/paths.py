@@ -12,7 +12,7 @@ def is_frozen() -> bool:
 
 
 def repo_root() -> Path:
-    """eve-fit-mcp repository root, or the directory containing a frozen binary."""
+    """pyfa-mcp repository root, or the directory containing a frozen binary."""
     if is_frozen():
         return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parents[2]
@@ -24,8 +24,8 @@ def data_dir() -> Path:
         return Path(env).expanduser().resolve()
     xdg = os.environ.get("XDG_CACHE_HOME")
     if xdg:
-        return Path(xdg).expanduser().resolve() / "eve-fit-mcp"
-    return Path.home() / ".cache" / "eve-fit-mcp"
+        return Path(xdg).expanduser().resolve() / "pyfa-mcp"
+    return Path.home() / ".cache" / "pyfa-mcp"
 
 
 def bundled_staticdata_dir() -> Path | None:

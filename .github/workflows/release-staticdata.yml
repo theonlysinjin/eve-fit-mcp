@@ -63,7 +63,7 @@ jobs:
           - **client_build:** \`${CLIENT_BUILD}\`
           - **asset:** \`staticdata-tq.tar.gz\` (extracts to \`staticdata/\`)
 
-          Used by eve-fit-mcp first-run / \`refresh_static_data\`.
+          Used by pyfa-mcp first-run / \`refresh_static_data\`.
           EOF
           )"
           # Floating tag always points at the current pack

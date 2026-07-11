@@ -3,11 +3,13 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "eve-fit-mcp"
+name = "pyfa-mcp"
 version = "0.1.0"
-description = "MCP server wrapping the Eos EVE Online fitting engine"
+description = "Pyfa MCP — evaluate EVE Online ship fits via the Eos engine"
 readme = "README.md"
 requires-python = ">=3.10"
+authors = [{ name = "theonlysinjin" }]
+keywords = ["eve", "eve-online", "pyfa", "eos", "mcp", "fitting"]
 dependencies = [
     "mcp>=1.0",
     "PyYAML>=5.1",
@@ -17,10 +19,28 @@ dependencies = [
 dev = ["pytest>=8.0"]
 
 [project.scripts]
-eve-fit-mcp = "eve_fit_mcp.server:main"
+pyfa-mcp = "pyfa_mcp.server:main"
+
+[project.urls]
+Homepage = "https://github.com/theonlysinjin/eve-fit-mcp"
+Repository = "https://github.com/theonlysinjin/eve-fit-mcp"
+Releases = "https://github.com/theonlysinjin/eve-fit-mcp/releases"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/eos/eos",
+    "/README.md",
+    "/AGENT.md",
+    "/pyproject.toml",
+]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/eve_fit_mcp"]
+packages = ["src/pyfa_mcp"]
+
+# Bundle the Eos engine so `uvx pyfa-mcp` / PyPI installs need no EOS_PACKAGE_PATH
+[tool.hatch.build.targets.wheel.force-include]
+"eos/eos" = "eos"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

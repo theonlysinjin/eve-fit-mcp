@@ -6,12 +6,12 @@ import os
 
 from mcp.server.fastmcp import FastMCP
 
-from eve_fit_mcp.eos_bootstrap import bootstrap_eos
-from eve_fit_mcp.fit_store import FitStore
-from eve_fit_mcp.tools import AGENT_CONTRACT, register_tools
+from pyfa_mcp.eos_bootstrap import bootstrap_eos
+from pyfa_mcp.fit_store import FitStore
+from pyfa_mcp.tools import AGENT_CONTRACT, register_tools
 
 INSTRUCTIONS = f"""
-Eos Fitting MCP — evaluate EVE Online ship fits using the Eos engine.
+Pyfa MCP — evaluate EVE Online ship fits using the Eos engine.
 
 {AGENT_CONTRACT}
 
@@ -40,7 +40,7 @@ def create_server() -> FastMCP:
             else None
         ),
     )
-    mcp = FastMCP("eos-fitting", instructions=INSTRUCTIONS)
+    mcp = FastMCP("pyfa-mcp", instructions=INSTRUCTIONS)
     register_tools(mcp, store)
     return mcp
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from eos import SourceManager, TypeFetchError
 
-from eve_fit_mcp.errors import InvalidTypeError
+from pyfa_mcp.errors import InvalidTypeError
 
 
 def require_type(type_id: int, *, kind: str = "type") -> None:

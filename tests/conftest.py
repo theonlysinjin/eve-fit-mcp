@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from eve_fit_mcp.paths import bundled_staticdata_dir, default_cache_path
+from pyfa_mcp.paths import bundled_staticdata_dir, default_cache_path
 
 _REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_EOS = _REPO_ROOT / "eos"
@@ -34,7 +34,7 @@ def eos_ready():
     os.environ.setdefault("EOS_PHOBOS_PATH", str(dump))
     os.environ.setdefault("EOS_CACHE_PATH", str(default_cache_path()))
     os.environ.setdefault("EOS_PACKAGE_PATH", str(DEFAULT_EOS))
-    from eve_fit_mcp.eos_bootstrap import bootstrap_eos
+    from pyfa_mcp.eos_bootstrap import bootstrap_eos
 
     bootstrap_eos(allow_download=False)
     return True
@@ -42,6 +42,6 @@ def eos_ready():
 
 @pytest.fixture
 def store(eos_ready):
-    from eve_fit_mcp.fit_store import FitStore
+    from pyfa_mcp.fit_store import FitStore
 
     return FitStore()

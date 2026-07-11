@@ -5,7 +5,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
-from eve_fit_mcp.report import build_report, collect_validation_errors
+from pyfa_mcp.report import build_report, collect_validation_errors
 
 
 def test_build_report_smoke_mocked():

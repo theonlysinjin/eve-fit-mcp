@@ -13,7 +13,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from eve_fit_mcp.paths import (
+from pyfa_mcp.paths import (
     bundled_staticdata_dir,
     cached_staticdata_dir,
     data_dir,
@@ -91,7 +91,7 @@ def refresh_staticdata(*, force: bool = True) -> dict[str, Any]:
     archive = data_dir() / "staticdata-tq.tar.gz"
     _download(url, archive)
 
-    staging = Path(tempfile.mkdtemp(prefix="eve-fit-staticdata-", dir=str(data_dir())))
+    staging = Path(tempfile.mkdtemp(prefix="pyfa-mcp-staticdata-", dir=str(data_dir())))
     try:
         _extract_tar_gz(archive, staging)
         extracted = _find_staticdata_root(staging)

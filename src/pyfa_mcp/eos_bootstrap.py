@@ -6,9 +6,9 @@ import os
 import sys
 from pathlib import Path
 
-from eve_fit_mcp.paths import default_cache_path
-from eve_fit_mcp.phobos_data import PhobosJsonDataHandler
-from eve_fit_mcp.staticdata import resolve_staticdata_path
+from pyfa_mcp.paths import default_cache_path
+from pyfa_mcp.phobos_data import PhobosJsonDataHandler
+from pyfa_mcp.staticdata import resolve_staticdata_path
 
 _BOOTSTRAPPED = False
 _DATA_HANDLER: PhobosJsonDataHandler | None = None
@@ -26,7 +26,7 @@ def _ensure_eos_importable() -> None:
     if env_path:
         candidates.append(Path(env_path))
     here = Path(__file__).resolve()
-    # …/eve-fit-mcp/src/eve_fit_mcp → …/eve-fit-mcp/eos
+    # …/pyfa-mcp/src/pyfa_mcp → …/pyfa-mcp/eos
     try:
         candidates.append(here.parents[2] / "eos")
         candidates.append(here.parents[2].parent / "eos")

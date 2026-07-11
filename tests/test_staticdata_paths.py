@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from eve_fit_mcp.paths import is_valid_staticdata
-from eve_fit_mcp.staticdata import _find_staticdata_root, read_client_build
+from pyfa_mcp.paths import is_valid_staticdata
+from pyfa_mcp.staticdata import _find_staticdata_root, read_client_build
 
 
 def test_is_valid_staticdata_false_for_empty(tmp_path: Path):

@@ -8,12 +8,12 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 
-from eve_fit_mcp import mutations
-from eve_fit_mcp.eos_bootstrap import skill_type_ids
-from eve_fit_mcp.errors import FitMcpError
-from eve_fit_mcp.fit_store import FitStore
-from eve_fit_mcp.report import collect_validation_errors
-from eve_fit_mcp.typecheck import require_type
+from pyfa_mcp import mutations
+from pyfa_mcp.eos_bootstrap import skill_type_ids
+from pyfa_mcp.errors import FitMcpError
+from pyfa_mcp.fit_store import FitStore
+from pyfa_mcp.report import collect_validation_errors
+from pyfa_mcp.typecheck import require_type
 AGENT_CONTRACT = (
     "This server evaluates fits only — it does not recommend modules or autofit. "
     "Propose one change at a time, call a mutation tool, compare FitReport snapshots, "
@@ -129,7 +129,7 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     def set_ship(fit_id: str, ship_type_id: int) -> dict[str, Any]:
         try:
             from eos import Ship, TypeFetchError
-            from eve_fit_mcp.errors import InvalidTypeError
+            from pyfa_mcp.errors import InvalidTypeError
 
             fit = store.get_fit(fit_id)
             require_type(int(ship_type_id), kind="ship")
@@ -146,7 +146,7 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     def set_stance(fit_id: str, type_id: int | None = None) -> dict[str, Any]:
         try:
             from eos import Stance, TypeFetchError
-            from eve_fit_mcp.errors import InvalidTypeError
+            from pyfa_mcp.errors import InvalidTypeError
 
             fit = store.get_fit(fit_id)
             if type_id is None:
@@ -246,7 +246,7 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     def add_rig(fit_id: str, type_id: int) -> dict[str, Any]:
         try:
             from eos import Rig, TypeFetchError
-            from eve_fit_mcp.errors import InvalidTypeError
+            from pyfa_mcp.errors import InvalidTypeError
 
             fit = store.get_fit(fit_id)
             require_type(int(type_id), kind="rig")
@@ -262,7 +262,7 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     @mcp.tool(description="Remove one rig matching type_id.")
     def remove_rig(fit_id: str, type_id: int) -> dict[str, Any]:
         try:
-            from eve_fit_mcp.errors import MutationError
+            from pyfa_mcp.errors import MutationError
 
             fit = store.get_fit(fit_id)
             for rig in list(fit.rigs):
@@ -278,7 +278,7 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     def add_subsystem(fit_id: str, type_id: int) -> dict[str, Any]:
         try:
             from eos import Subsystem, TypeFetchError
-            from eve_fit_mcp.errors import InvalidTypeError
+            from pyfa_mcp.errors import InvalidTypeError
 
             fit = store.get_fit(fit_id)
             require_type(int(type_id), kind="subsystem")
@@ -294,7 +294,7 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     @mcp.tool(description="Remove one subsystem matching type_id.")
     def remove_subsystem(fit_id: str, type_id: int) -> dict[str, Any]:
         try:
-            from eve_fit_mcp.errors import MutationError
+            from pyfa_mcp.errors import MutationError
 
             fit = store.get_fit(fit_id)
             for item in list(fit.subsystems):
@@ -315,8 +315,8 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     ) -> dict[str, Any]:
         try:
             from eos import Drone, TypeFetchError
-            from eve_fit_mcp.errors import InvalidTypeError
-            from eve_fit_mcp.state_map import parse_state
+            from pyfa_mcp.errors import InvalidTypeError
+            from pyfa_mcp.state_map import parse_state
 
             fit = store.get_fit(fit_id)
             require_type(int(type_id), kind="drone")
@@ -334,7 +334,7 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     @mcp.tool(description="Remove up to quantity drones of type_id.")
     def remove_drone(fit_id: str, type_id: int, quantity: int = 1) -> dict[str, Any]:
         try:
-            from eve_fit_mcp.errors import MutationError
+            from pyfa_mcp.errors import MutationError
 
             fit = store.get_fit(fit_id)
             remaining = max(1, int(quantity))
@@ -354,8 +354,8 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     @mcp.tool(description="Set state for all drones of type_id.")
     def set_drone_state(fit_id: str, type_id: int, state: str) -> dict[str, Any]:
         try:
-            from eve_fit_mcp.errors import MutationError
-            from eve_fit_mcp.state_map import parse_state
+            from pyfa_mcp.errors import MutationError
+            from pyfa_mcp.state_map import parse_state
 
             fit = store.get_fit(fit_id)
             st = parse_state(state)
@@ -377,8 +377,8 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     ) -> dict[str, Any]:
         try:
             from eos import FighterSquad, TypeFetchError
-            from eve_fit_mcp.errors import InvalidTypeError
-            from eve_fit_mcp.state_map import parse_state
+            from pyfa_mcp.errors import InvalidTypeError
+            from pyfa_mcp.state_map import parse_state
 
             fit = store.get_fit(fit_id)
             require_type(int(type_id), kind="fighter")
@@ -396,7 +396,7 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     @mcp.tool(description="Remove one fighter squad of type_id.")
     def remove_fighter(fit_id: str, type_id: int) -> dict[str, Any]:
         try:
-            from eve_fit_mcp.errors import MutationError
+            from pyfa_mcp.errors import MutationError
 
             fit = store.get_fit(fit_id)
             for item in list(fit.fighters):
@@ -411,8 +411,8 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     @mcp.tool(description="Set state for fighter squads of type_id.")
     def set_fighter_state(fit_id: str, type_id: int, state: str) -> dict[str, Any]:
         try:
-            from eve_fit_mcp.errors import MutationError
-            from eve_fit_mcp.state_map import parse_state
+            from pyfa_mcp.errors import MutationError
+            from pyfa_mcp.state_map import parse_state
 
             fit = store.get_fit(fit_id)
             st = parse_state(state)
@@ -432,7 +432,7 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     def add_implant(fit_id: str, type_id: int) -> dict[str, Any]:
         try:
             from eos import Implant, TypeFetchError
-            from eve_fit_mcp.errors import InvalidTypeError
+            from pyfa_mcp.errors import InvalidTypeError
 
             fit = store.get_fit(fit_id)
             require_type(int(type_id), kind="implant")
@@ -448,7 +448,7 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     @mcp.tool(description="Remove implant of type_id.")
     def remove_implant(fit_id: str, type_id: int) -> dict[str, Any]:
         try:
-            from eve_fit_mcp.errors import MutationError
+            from pyfa_mcp.errors import MutationError
 
             fit = store.get_fit(fit_id)
             for item in list(fit.implants):
@@ -464,7 +464,7 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     def add_booster(fit_id: str, type_id: int) -> dict[str, Any]:
         try:
             from eos import Booster, TypeFetchError
-            from eve_fit_mcp.errors import InvalidTypeError
+            from pyfa_mcp.errors import InvalidTypeError
 
             fit = store.get_fit(fit_id)
             require_type(int(type_id), kind="booster")
@@ -480,7 +480,7 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     @mcp.tool(description="Remove booster of type_id.")
     def remove_booster(fit_id: str, type_id: int) -> dict[str, Any]:
         try:
-            from eve_fit_mcp.errors import MutationError
+            from pyfa_mcp.errors import MutationError
 
             fit = store.get_fit(fit_id)
             for item in list(fit.boosters):
@@ -496,7 +496,7 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     def set_effect_beacon(fit_id: str, type_id: int | None = None) -> dict[str, Any]:
         try:
             from eos import EffectBeacon, TypeFetchError
-            from eve_fit_mcp.errors import InvalidTypeError
+            from pyfa_mcp.errors import InvalidTypeError
 
             fit = store.get_fit(fit_id)
             if type_id is None:
@@ -555,7 +555,7 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
 
     @mcp.tool(
         description=(
-            "Download / refresh TQ Phobos staticdata from the eve-fit-mcp GitHub release "
+            "Download / refresh TQ Phobos staticdata from the pyfa-mcp GitHub release "
             "asset (or EOS_STATICDATA_URL), replace the local cache dump, clear the Eos "
             "cache, and re-bootstrap. Use after patches or when dumps look stale. "
             "force=true re-downloads even if a dump is already present."
@@ -563,8 +563,8 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
     )
     def refresh_static_data(force: bool = True) -> dict[str, Any]:
         try:
-            from eve_fit_mcp.eos_bootstrap import bootstrap_eos
-            from eve_fit_mcp.staticdata import refresh_staticdata
+            from pyfa_mcp.eos_bootstrap import bootstrap_eos
+            from pyfa_mcp.staticdata import refresh_staticdata
 
             result = refresh_staticdata(force=force)
             # Prefer the downloaded dump for subsequent fits

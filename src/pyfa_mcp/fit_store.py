@@ -27,9 +27,9 @@ from eos import (
     TypeFetchError,
 )
 
-from eve_fit_mcp.errors import FitNotFoundError, InvalidTypeError
-from eve_fit_mcp.report import build_report
-from eve_fit_mcp.typecheck import require_type
+from pyfa_mcp.errors import FitNotFoundError, InvalidTypeError
+from pyfa_mcp.report import build_report
+from pyfa_mcp.typecheck import require_type
 
 
 @dataclass
