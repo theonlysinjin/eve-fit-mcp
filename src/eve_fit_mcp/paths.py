@@ -3,11 +3,18 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 
+def is_frozen() -> bool:
+    return bool(getattr(sys, "frozen", False))
+
+
 def repo_root() -> Path:
-    """eve-fit-mcp repository root (…/eve-fit-mcp)."""
+    """eve-fit-mcp repository root, or the directory containing a frozen binary."""
+    if is_frozen():
+        return Path(sys.executable).resolve().parent
     return Path(__file__).resolve().parents[2]
 
 
@@ -22,7 +29,9 @@ def data_dir() -> Path:
 
 
 def bundled_staticdata_dir() -> Path | None:
-    """In-tree pyfa submodule staticdata, if present."""
+    """In-tree pyfa submodule staticdata, if present (dev checkouts only)."""
+    if is_frozen():
+        return None
     candidate = repo_root() / "pyfa" / "staticdata"
     if _looks_like_staticdata(candidate):
         return candidate

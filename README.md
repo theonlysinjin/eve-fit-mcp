@@ -84,6 +84,15 @@ eve-fit-mcp
 
 With the `pyfa` submodule initialized, no `EOS_PHOBOS_PATH` is needed. Call `refresh_static_data` to pull the CI-published dump into the cache dir instead.
 
+### Prebuilt binary
+
+GitHub Actions builds PyInstaller onefiles (Linux / macOS / Windows) via [`.github/workflows/release-binary.yml`](.github/workflows/release-binary.yml).
+
+- Floating release: [`binary-latest`](https://github.com/theonlysinjin/eve-fit-mcp/releases/tag/binary-latest) (manual **Release binary** workflow)
+- Versioned: push a `v*` tag
+
+Download e.g. `eve-fit-mcp-linux-x64`, `chmod +x`, point Cursor at it — no Python install required. Staticdata still downloads on first run from the [`staticdata`](https://github.com/theonlysinjin/eve-fit-mcp/releases/tag/staticdata) release.
+
 ## Creating `AGENTS.md` (fitting projects)
 
 Put an `AGENTS.md` in the project where you design fits (not in this MCP repo). Cursor loads it as the agent playbook for that workspace. Example:

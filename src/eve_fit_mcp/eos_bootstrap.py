@@ -17,14 +17,21 @@ _DATA_HANDLER: PhobosJsonDataHandler | None = None
 def _ensure_eos_importable() -> None:
     if "eos" in sys.modules:
         return
+    # PyInstaller onefile unpack dir
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        sys.path.insert(0, str(meipass))
     env_path = os.environ.get("EOS_PACKAGE_PATH")
     candidates = []
     if env_path:
         candidates.append(Path(env_path))
     here = Path(__file__).resolve()
     # …/eve-fit-mcp/src/eve_fit_mcp → …/eve-fit-mcp/eos
-    candidates.append(here.parents[2] / "eos")
-    candidates.append(here.parents[2].parent / "eos")
+    try:
+        candidates.append(here.parents[2] / "eos")
+        candidates.append(here.parents[2].parent / "eos")
+    except IndexError:
+        pass
     for candidate in candidates:
         if (candidate / "eos" / "__init__.py").is_file():
             sys.path.insert(0, str(candidate))

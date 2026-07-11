@@ -17,6 +17,7 @@ Consumer-facing agent playbooks (how to *use* the MCP while fitting) live in the
 | `src/eve_fit_mcp/staticdata.py` | Download / refresh release dump |
 | `src/eve_fit_mcp/phobos_data.py` | Type/group lookups from dump |
 | `.github/workflows/release-staticdata.yml` | Pack `pyfa/staticdata` → GitHub release `staticdata` |
+| `.github/workflows/release-binary.yml` | PyInstaller onefile → `binary-latest` / `v*` releases |
 | `eos/` | Git submodule — [pyfa-org/eos](https://github.com/pyfa-org/eos) |
 | `phobos/` | Git submodule — [pyfa-org/Phobos](https://github.com/pyfa-org/Phobos) dump tool |
 | `pyfa/` | Git submodule — [pyfa-org/Pyfa](https://github.com/pyfa-org/Pyfa) (`staticdata/`) |
@@ -40,6 +41,8 @@ eve-fit-mcp   # or: python -m eve_fit_mcp
 ```
 
 To publish a new dump asset: Actions → **Release staticdata** (or wait for the weekly schedule / push that updates `pyfa`).
+
+To publish binaries: Actions → **Release binary** (or push a `v*` tag).
 
 ## Contracts to preserve
 

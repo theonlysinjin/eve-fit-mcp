@@ -1,0 +1,177 @@
+name: Release binary
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+    branches:
+      - main
+    paths:
+      - "src/**"
+      - "eos"
+      - "pyproject.toml"
+      - "packaging/**"
+      - ".github/workflows/release-binary.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-binary-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: eve-fit-mcp-linux-x64
+          - os: macos-latest
+            artifact: eve-fit-mcp-macos-arm64
+          - os: windows-latest
+            artifact: eve-fit-mcp-windows-x64.exe
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build deps
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install "mcp>=1.0" "PyYAML>=5.1" pyinstaller
+          pip install -e .
+
+      - name: Freeze with PyInstaller
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="${{ matrix.artifact }}"
+          NAME="${OUT%.exe}"
+          pyinstaller \
+            --noconfirm \
+            --clean \
+            --onefile \
+            --name "${NAME}" \
+            --paths src \
+            --paths eos \
+            --collect-all mcp \
+            --collect-submodules eos \
+            --hidden-import eve_fit_mcp \
+            --hidden-import eve_fit_mcp.server \
+            --hidden-import yaml \
+            src/eve_fit_mcp/__main__.py
+
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            mv "dist/${NAME}.exe" "dist/${OUT}"
+          else
+            chmod +x "dist/${NAME}"
+            if [[ "dist/${NAME}" != "dist/${OUT}" ]]; then
+              mv "dist/${NAME}" "dist/${OUT}"
+            fi
+          fi
+          ls -lh "dist/${OUT}"
+
+      - name: Verify artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          BIN="dist/${{ matrix.artifact }}"
+          test -f "$BIN"
+          if [[ "${{ runner.os }}" != "Windows" ]]; then
+            test -x "$BIN"
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release assets
+        id: prep
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          while IFS= read -r f; do
+            cp "$f" "release/$(basename "$f")"
+          done < <(find artifacts -type f)
+          cd release
+          sha256sum eve-fit-mcp-* | tee SHA256SUMS
+          ls -lh
+
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=binary-latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.prep.outputs.tag }}
+        run: |
+          set -euo pipefail
+          NOTES="$(cat <<EOF
+          Frozen **eve-fit-mcp** MCP server (PyInstaller onefile).
+
+          Staticdata is **not** bundled — on first run (or via \`refresh_static_data\`) the binary downloads:
+          https://github.com/${{ github.repository }}/releases/download/staticdata/staticdata-tq.tar.gz
+
+          ### Cursor MCP config (Linux)
+
+          \`\`\`json
+          {
+            "mcpServers": {
+              "eos-fitting": {
+                "command": "/path/to/eve-fit-mcp-linux-x64"
+              }
+            }
+          }
+          \`\`\`
+
+          \`chmod +x\` on Unix. macOS may need: \`xattr -d com.apple.quarantine eve-fit-mcp-macos-arm64\`.
+          EOF
+          )"
+
+          cd release
+          if [[ "$TAG" == "binary-latest" ]]; then
+            if gh release view binary-latest >/dev/null 2>&1; then
+              gh release upload binary-latest ./* --clobber
+              gh release edit binary-latest --title "eve-fit-mcp binary (latest)" --notes "${NOTES}"
+            else
+              gh release create binary-latest ./* \
+                --title "eve-fit-mcp binary (latest)" \
+                --notes "${NOTES}" \
+                --latest=false
+            fi
+          else
+            gh release create "$TAG" ./* \
+              --title "eve-fit-mcp ${TAG}" \
+              --notes "${NOTES}" \
+              --generate-notes
+          fi
