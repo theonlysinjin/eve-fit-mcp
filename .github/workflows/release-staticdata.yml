@@ -1,0 +1,91 @@
+name: Release staticdata
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly — re-package whatever pyfa submodule currently pins
+    - cron: "0 6 * * 1"
+  push:
+    branches: [main]
+    paths:
+      - "pyfa"
+      - ".github/workflows/release-staticdata.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Update pyfa submodule to latest master
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: |
+          git submodule update --init --depth 1 pyfa
+          git -C pyfa fetch --depth 1 origin master
+          git -C pyfa checkout FETCH_HEAD
+
+      - name: Read client_build + package archive
+        id: pack
+        run: |
+          set -euo pipefail
+          test -d pyfa/staticdata/fsd_built
+          test -d pyfa/staticdata/phobos
+          BUILD="$(python3 - <<'PY'
+          import json
+          from pathlib import Path
+          meta = json.loads(Path("pyfa/staticdata/phobos/metadata.0.json").read_text())
+          build = next(r["field_value"] for r in meta if r["field_name"] == "client_build")
+          print(build)
+          PY
+          )"
+          echo "client_build=${BUILD}" >> "$GITHUB_OUTPUT"
+          echo "Packaging staticdata for TQ client_build=${BUILD}"
+          tar -C pyfa -czf staticdata-tq.tar.gz staticdata
+          ls -lh staticdata-tq.tar.gz
+          sha256sum staticdata-tq.tar.gz | tee staticdata-tq.tar.gz.sha256
+
+      - name: Publish floating staticdata release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLIENT_BUILD: ${{ steps.pack.outputs.client_build }}
+        run: |
+          set -euo pipefail
+          NOTES="$(cat <<EOF
+          Phobos-format TQ staticdata packaged from the [pyfa-org/Pyfa](https://github.com/pyfa-org/Pyfa) \`staticdata/\` tree.
+
+          - **client_build:** \`${CLIENT_BUILD}\`
+          - **asset:** \`staticdata-tq.tar.gz\` (extracts to \`staticdata/\`)
+
+          Used by eve-fit-mcp first-run / \`refresh_static_data\`.
+          EOF
+          )"
+          # Floating tag always points at the current pack
+          if gh release view staticdata >/dev/null 2>&1; then
+            gh release upload staticdata staticdata-tq.tar.gz staticdata-tq.tar.gz.sha256 --clobber
+            gh release edit staticdata --title "EVE staticdata (TQ ${CLIENT_BUILD})" --notes "${NOTES}"
+          else
+            gh release create staticdata \
+              staticdata-tq.tar.gz \
+              staticdata-tq.tar.gz.sha256 \
+              --title "EVE staticdata (TQ ${CLIENT_BUILD})" \
+              --notes "${NOTES}" \
+              --latest=false
+          fi
+
+          # Immutable per-build tag (skip if already exists)
+          TAG="staticdata-tq-${CLIENT_BUILD}"
+          if ! gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release create "${TAG}" \
+              staticdata-tq.tar.gz \
+              staticdata-tq.tar.gz.sha256 \
+              --title "EVE staticdata (TQ ${CLIENT_BUILD})" \
+              --notes "${NOTES}" \
+              --latest=false
+          fi

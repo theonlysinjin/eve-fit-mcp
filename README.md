@@ -5,28 +5,44 @@ MCP server that wraps the [Eos](https://github.com/pyfa-org/eos) EVE Online fitt
 ## Requirements
 
 - Python 3.10+
-- Git submodules: [eos](https://github.com/pyfa-org/eos) (fitting engine) and [Phobos](https://github.com/pyfa-org/Phobos) (client dump tool)
-- A Phobos **data dump** at runtime (or Pyfa `staticdata/` with `fsd_built/`, `fsd_lite/`, `phobos/`)
+- Git submodules: [eos](https://github.com/pyfa-org/eos), [Phobos](https://github.com/pyfa-org/Phobos) (dump tool), [Pyfa](https://github.com/pyfa-org/Pyfa) (ships `staticdata/`)
+- A Phobos-format **staticdata** dump at runtime (`fsd_built/`, `fsd_lite/`, `phobos/`)
 
-`EOS_PHOBOS_PATH` points at the dump output, not the `phobos/` submodule. Use the submodule to regenerate dumps from the EVE client when needed; if you already have a dump (e.g. Pyfa’s), you do not need to run Phobos at MCP runtime.
+### Staticdata (auto / refresh)
+
+Resolution order:
+
+1. `EOS_PHOBOS_PATH` if set
+2. In-tree `pyfa/staticdata` (submodule)
+3. Cached download under `EOS_DATA_DIR` / `~/.cache/eve-fit-mcp/staticdata`
+4. Otherwise download the GitHub release asset published by CI
+
+CI workflow [`.github/workflows/release-staticdata.yml`](.github/workflows/release-staticdata.yml) packs `pyfa/staticdata` into the floating release tag **`staticdata`** (`staticdata-tq.tar.gz`). Agents can call MCP tool **`refresh_static_data`** to re-fetch it after patches.
+
+Default URL:  
+`https://github.com/theonlysinjin/eve-fit-mcp/releases/download/staticdata/staticdata-tq.tar.gz`
 
 ## Environment
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `EOS_PHOBOS_PATH` | yes | Phobos dump root (folder containing `fsd_built/`, `fsd_lite/`, `phobos/`) |
-| `EOS_CACHE_PATH` | yes | Eos cache file path, e.g. `.cache/eos_tq.json.bz2` |
+| `EOS_PHOBOS_PATH` | no* | Dump root; auto-resolved if omitted |
+| `EOS_CACHE_PATH` | no* | Eos cache file (default under data dir) |
+| `EOS_DATA_DIR` | no | Download/cache root (default `~/.cache/eve-fit-mcp`) |
+| `EOS_STATICDATA_URL` | no | Override release asset URL |
 | `EOS_SOURCE_ALIAS` | no | Default `tq` |
-| `EOS_PACKAGE_PATH` | no | Path to eos package root (defaults to the `eos/` submodule if you set it) |
+| `EOS_PACKAGE_PATH` | no | Path to eos package root (`./eos` submodule) |
 | `EOS_MAX_FITS` | no | Max in-memory fits (default 100) |
 | `EOS_FIT_TTL` | no | Optional fit TTL in seconds |
 
-Example using Pyfa’s staticdata (multi-part `*.0.json` files are supported) and the vendored `eos/` submodule:
+\*Required only if you disable download and have no bundled `pyfa/staticdata`.
+
+Example (explicit local dump + submodule eos):
 
 ```bash
-export EOS_PHOBOS_PATH=/home/sinjin/workspace/Pyfa/staticdata
-export EOS_CACHE_PATH=/home/sinjin/workspace/eve-fit-mcp/.cache/eos_tq.json.bz2
-export EOS_PACKAGE_PATH=/home/sinjin/workspace/eve-fit-mcp/eos
+export EOS_PHOBOS_PATH=$PWD/pyfa/staticdata
+export EOS_CACHE_PATH=$PWD/.cache/eos_tq.json.bz2
+export EOS_PACKAGE_PATH=$PWD/eos
 ```
 
 First start builds the Eos cache from the dump (can take a few minutes). Later starts reuse the cache when the fingerprint matches.
@@ -43,6 +59,7 @@ uv venv .venv && source .venv/bin/activate
 uv pip install -e ".[dev]"
 export PYTHONPATH="$PWD/eos:$PYTHONPATH"
 export EOS_PACKAGE_PATH="$PWD/eos"
+# optional: omit EOS_PHOBOS_PATH to use pyfa/staticdata or auto-download
 
 eve-fit-mcp
 # or: python -m eve_fit_mcp
@@ -57,8 +74,6 @@ eve-fit-mcp
       "command": "/home/sinjin/workspace/eve-fit-mcp/.venv/bin/python",
       "args": ["-m", "eve_fit_mcp"],
       "env": {
-        "EOS_PHOBOS_PATH": "/home/sinjin/workspace/Pyfa/staticdata",
-        "EOS_CACHE_PATH": "/home/sinjin/workspace/eve-fit-mcp/.cache/eos_tq.json.bz2",
         "EOS_PACKAGE_PATH": "/home/sinjin/workspace/eve-fit-mcp/eos",
         "PYTHONPATH": "/home/sinjin/workspace/eve-fit-mcp/eos"
       }
@@ -66,6 +81,8 @@ eve-fit-mcp
   }
 }
 ```
+
+With the `pyfa` submodule initialized, no `EOS_PHOBOS_PATH` is needed. Call `refresh_static_data` to pull the CI-published dump into the cache dir instead.
 
 ## Creating `AGENTS.md` (fitting projects)
 
@@ -124,18 +141,20 @@ Optionally keep skill caches under `users/<Name>/skills.json` next to that file.
 **Session:** `create_fit`, `clone_fit`, `delete_fit`, `list_fits`, `get_fit`, `reset_fit`  
 **Skills:** `set_skills`, `set_skill`, `clear_skills`, `apply_all_skills_5`  
 **Hull:** `set_ship`, `set_stance`, `equip_module`, `replace_module`, `remove_module`, `set_module_state`, `set_charge`, `add_rig` / `remove_rig`, `add_subsystem` / `remove_subsystem`, `add_drone` / `remove_drone` / `set_drone_state`, `add_fighter` / `remove_fighter` / `set_fighter_state`, `add_implant` / `remove_implant`, `add_booster` / `remove_booster`, `set_effect_beacon`  
-**Eval:** `get_stats`, `validate_fit`
+**Eval:** `get_stats`, `validate_fit`  
+**Data:** `refresh_static_data`
 
 Every mutation returns `{fit_id, report}` with the same FitReport shape as `get_stats`. Soft validation failures are included in the report; the mutation still applies. Hard errors (unknown type ID, invalid rack) leave the fit unchanged.
 
 ## Tests
 
 ```bash
-export EOS_PHOBOS_PATH=... EOS_CACHE_PATH=... EOS_PACKAGE_PATH=...
+export EOS_PACKAGE_PATH=$PWD/eos
+# uses pyfa/staticdata when the submodule is present
 pytest
 ```
 
-Unit tests for report serialization run without data. Integration roundtrips skip if `EOS_PHOBOS_PATH` is missing.
+Unit tests for report serialization run without data. Integration roundtrips skip if no dump is available.
 
 ## Non-goals
 

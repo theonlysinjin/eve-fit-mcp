@@ -6,7 +6,9 @@ import os
 import sys
 from pathlib import Path
 
+from eve_fit_mcp.paths import default_cache_path
 from eve_fit_mcp.phobos_data import PhobosJsonDataHandler
+from eve_fit_mcp.staticdata import resolve_staticdata_path
 
 _BOOTSTRAPPED = False
 _DATA_HANDLER: PhobosJsonDataHandler | None = None
@@ -19,15 +21,14 @@ def _ensure_eos_importable() -> None:
     candidates = []
     if env_path:
         candidates.append(Path(env_path))
-    # eve-fit/src/eve_fit_mcp → workspace/eos
     here = Path(__file__).resolve()
+    # …/eve-fit-mcp/src/eve_fit_mcp → …/eve-fit-mcp/eos
+    candidates.append(here.parents[2] / "eos")
     candidates.append(here.parents[2].parent / "eos")
-    candidates.append(here.parents[3] / "eos")
     for candidate in candidates:
         if (candidate / "eos" / "__init__.py").is_file():
             sys.path.insert(0, str(candidate))
             return
-    # Last resort: hope site-packages has it
     try:
         import eos  # noqa: F401
     except ImportError as exc:
@@ -43,6 +44,7 @@ def bootstrap_eos(
     cache_path: str | None = None,
     source_alias: str | None = None,
     force: bool = False,
+    allow_download: bool = True,
 ) -> PhobosJsonDataHandler:
     """Initialize SourceManager from env / args. Fail fast on load errors."""
     global _BOOTSTRAPPED, _DATA_HANDLER
@@ -54,16 +56,16 @@ def bootstrap_eos(
     _ensure_eos_importable()
     from eos import JsonCacheHandler, SourceManager
 
-    phobos = phobos_path or os.environ.get("EOS_PHOBOS_PATH")
-    cache = cache_path or os.environ.get("EOS_CACHE_PATH")
+    if phobos_path:
+        phobos = phobos_path
+    elif os.environ.get("EOS_PHOBOS_PATH"):
+        phobos = os.environ["EOS_PHOBOS_PATH"]
+    else:
+        phobos = str(resolve_staticdata_path(allow_download=allow_download))
+
+    cache = cache_path or str(default_cache_path())
     alias = source_alias or os.environ.get("EOS_SOURCE_ALIAS", "tq")
 
-    if not phobos:
-        raise RuntimeError("EOS_PHOBOS_PATH is required (Phobos dump directory)")
-    if not cache:
-        raise RuntimeError(
-            "EOS_CACHE_PATH is required (e.g. path to eos_tq.json.bz2)"
-        )
     if not os.path.isdir(phobos):
         raise RuntimeError(f"EOS_PHOBOS_PATH is not a directory: {phobos}")
 
@@ -72,7 +74,6 @@ def bootstrap_eos(
         os.makedirs(cache_dir, exist_ok=True)
 
     data_handler = PhobosJsonDataHandler(phobos)
-    # Touch version early so missing metadata fails clearly
     version = data_handler.get_version()
     if version is None:
         raise RuntimeError(
@@ -83,6 +84,10 @@ def bootstrap_eos(
     if alias in SourceManager.list():
         SourceManager.remove(alias)
     SourceManager.add(alias, data_handler, cache_handler, make_default=True)
+
+    # Keep env consistent for tools / later refreshes
+    os.environ.setdefault("EOS_PHOBOS_PATH", phobos)
+    os.environ.setdefault("EOS_CACHE_PATH", cache)
 
     _DATA_HANDLER = data_handler
     _BOOTSTRAPPED = True

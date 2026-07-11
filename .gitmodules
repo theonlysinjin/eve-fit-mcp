@@ -4,3 +4,6 @@
 [submodule "phobos"]
 	path = phobos
 	url = https://github.com/pyfa-org/Phobos.git
+[submodule "pyfa"]
+	path = pyfa
+	url = https://github.com/pyfa-org/Pyfa.git

@@ -5,3 +5,5 @@ __pycache__/
 .pytest_cache/
 dist/
 *.egg-info/
+staticdata-tq.tar.gz
+staticdata-tq.tar.gz.sha256

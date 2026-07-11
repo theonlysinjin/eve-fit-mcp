@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
@@ -13,7 +14,6 @@ from eve_fit_mcp.errors import FitMcpError
 from eve_fit_mcp.fit_store import FitStore
 from eve_fit_mcp.report import collect_validation_errors
 from eve_fit_mcp.typecheck import require_type
-
 AGENT_CONTRACT = (
     "This server evaluates fits only — it does not recommend modules or autofit. "
     "Propose one change at a time, call a mutation tool, compare FitReport snapshots, "
@@ -547,6 +547,37 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
                 "ok": len(errors) == 0,
                 "validation_errors": errors,
             }
+        except Exception as exc:
+            _raise(exc)
+            raise
+
+    # --- Static data ---
+
+    @mcp.tool(
+        description=(
+            "Download / refresh TQ Phobos staticdata from the eve-fit-mcp GitHub release "
+            "asset (or EOS_STATICDATA_URL), replace the local cache dump, clear the Eos "
+            "cache, and re-bootstrap. Use after patches or when dumps look stale. "
+            "force=true re-downloads even if a dump is already present."
+        )
+    )
+    def refresh_static_data(force: bool = True) -> dict[str, Any]:
+        try:
+            from eve_fit_mcp.eos_bootstrap import bootstrap_eos
+            from eve_fit_mcp.staticdata import refresh_staticdata
+
+            result = refresh_staticdata(force=force)
+            # Prefer the downloaded dump for subsequent fits
+            os.environ["EOS_PHOBOS_PATH"] = result["staticdata_path"]
+            os.environ["EOS_CACHE_PATH"] = result["cache_path"]
+            bootstrap_eos(
+                phobos_path=result["staticdata_path"],
+                cache_path=result["cache_path"],
+                force=True,
+                allow_download=False,
+            )
+            result["bootstrapped"] = True
+            return result
         except Exception as exc:
             _raise(exc)
             raise

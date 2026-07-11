@@ -13,17 +13,20 @@ Consumer-facing agent playbooks (how to *use* the MCP while fitting) live in the
 | `src/eve_fit_mcp/fit_store.py` | In-memory fits, TTL/max, mutation orchestration |
 | `src/eve_fit_mcp/mutations.py` | Equip / replace / state / charge / drones / … |
 | `src/eve_fit_mcp/report.py` | FitReport serialization + validation errors |
-| `src/eve_fit_mcp/eos_bootstrap.py` | Load Eos + Phobos/cache fingerprint |
+| `src/eve_fit_mcp/eos_bootstrap.py` | Load Eos + resolve staticdata/cache |
+| `src/eve_fit_mcp/staticdata.py` | Download / refresh release dump |
 | `src/eve_fit_mcp/phobos_data.py` | Type/group lookups from dump |
+| `.github/workflows/release-staticdata.yml` | Pack `pyfa/staticdata` → GitHub release `staticdata` |
 | `eos/` | Git submodule — [pyfa-org/eos](https://github.com/pyfa-org/eos) |
 | `phobos/` | Git submodule — [pyfa-org/Phobos](https://github.com/pyfa-org/Phobos) dump tool |
+| `pyfa/` | Git submodule — [pyfa-org/Pyfa](https://github.com/pyfa-org/Pyfa) (`staticdata/`) |
 | `tests/` | Smoke (no data) + roundtrips (need a dump) |
 
 ## Environment
 
-Required at runtime: `EOS_PHOBOS_PATH` (dump root, not the submodule), `EOS_CACHE_PATH`. Optional: `EOS_PACKAGE_PATH` (point at `eos/`), `EOS_SOURCE_ALIAS`, `EOS_MAX_FITS`, `EOS_FIT_TTL`. See `.env.example` and README.
+Optional at runtime: `EOS_PHOBOS_PATH` / `EOS_CACHE_PATH` (auto from `pyfa/staticdata` or downloaded release). Also `EOS_DATA_DIR`, `EOS_STATICDATA_URL`, `EOS_PACKAGE_PATH` (`eos/`), `EOS_SOURCE_ALIAS`, `EOS_MAX_FITS`, `EOS_FIT_TTL`.
 
-After clone: `git submodule update --init --recursive`. Eos is not a PyPI dependency.
+After clone: `git submodule update --init --recursive`.
 
 ## Dev commands
 
@@ -31,12 +34,12 @@ After clone: `git submodule update --init --recursive`. Eos is not a PyPI depend
 git submodule update --init --recursive
 uv venv .venv && source .venv/bin/activate
 uv pip install -e ".[dev]"
-export EOS_PHOBOS_PATH=… EOS_CACHE_PATH=… EOS_PACKAGE_PATH=$PWD/eos
+export EOS_PACKAGE_PATH=$PWD/eos
 pytest
 eve-fit-mcp   # or: python -m eve_fit_mcp
 ```
 
-Integration tests skip when dump data is missing.
+To publish a new dump asset: Actions → **Release staticdata** (or wait for the weekly schedule / push that updates `pyfa`).
 
 ## Contracts to preserve
 

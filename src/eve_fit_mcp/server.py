@@ -22,6 +22,8 @@ Typical loop:
 4. Change one module or state; compare reports
 5. Repeat until constraints are met
 
+If game data looks stale after a TQ patch, call refresh_static_data.
+
 Type IDs are canonical. Mutations that fail hard (bad type ID, wrong rack)
 leave the fit unchanged and return a tool error. Soft validation failures
 (CPU, skills, slots) still apply the change and appear in FitReport.validation_errors.
