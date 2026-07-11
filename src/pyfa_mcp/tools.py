@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import Context, FastMCP
 from mcp.server.fastmcp.exceptions import ToolError
 
 from pyfa_mcp import mutations
@@ -557,26 +557,65 @@ def register_tools(mcp: FastMCP, store: FitStore) -> None:
         description=(
             "Download / refresh TQ Phobos staticdata from the pyfa-mcp GitHub release "
             "asset (or EOS_STATICDATA_URL), replace the local cache dump, clear the Eos "
-            "cache, and re-bootstrap. Use after patches or when dumps look stale. "
+            "cache, and re-bootstrap. Emits download progress via MCP logs/progress. "
             "force=true re-downloads even if a dump is already present."
         )
     )
-    def refresh_static_data(force: bool = True) -> dict[str, Any]:
+    async def refresh_static_data(
+        force: bool = True, ctx: Context | None = None
+    ) -> dict[str, Any]:
         try:
-            from pyfa_mcp.eos_bootstrap import bootstrap_eos
-            from pyfa_mcp.staticdata import refresh_staticdata
+            import asyncio
+            from queue import SimpleQueue
 
-            result = refresh_staticdata(force=force)
-            # Prefer the downloaded dump for subsequent fits
+            from pyfa_mcp.eos_bootstrap import bootstrap_eos
+            from pyfa_mcp.staticdata import _stderr_progress, refresh_staticdata
+
+            events: SimpleQueue[tuple[int, int | None, str] | None] = SimpleQueue()
+            loop = asyncio.get_running_loop()
+
+            def on_progress(done: int, total: int | None, message: str) -> None:
+                _stderr_progress(done, total, message)
+                loop.call_soon_threadsafe(events.put, (done, total, message))
+
+            async def pump_progress() -> None:
+                while True:
+                    item = await asyncio.to_thread(events.get)
+                    if item is None:
+                        return
+                    done, total, message = item
+                    if ctx is not None:
+                        await ctx.info(message)
+                        if total and total > 0:
+                            await ctx.report_progress(done, total, message)
+
+            pump = asyncio.create_task(pump_progress())
+            try:
+                result = await asyncio.to_thread(
+                    refresh_staticdata, force=force, on_progress=on_progress
+                )
+            finally:
+                events.put(None)
+                await pump
+
+            if ctx is not None:
+                await ctx.info("Re-bootstrapping Eos…")
             os.environ["EOS_PHOBOS_PATH"] = result["staticdata_path"]
             os.environ["EOS_CACHE_PATH"] = result["cache_path"]
-            bootstrap_eos(
+            await asyncio.to_thread(
+                bootstrap_eos,
                 phobos_path=result["staticdata_path"],
                 cache_path=result["cache_path"],
                 force=True,
                 allow_download=False,
             )
             result["bootstrapped"] = True
+            if ctx is not None:
+                build = result.get("client_build")
+                await ctx.info(
+                    f"Staticdata ready (client_build={build}). "
+                    f"Path: {result['staticdata_path']}"
+                )
             return result
         except Exception as exc:
             _raise(exc)
